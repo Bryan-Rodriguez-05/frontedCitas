@@ -10,9 +10,15 @@ function AgendarCita() {
   const [formData, setFormData] = useState({
     paciente_id: patientData ? patientData.id : '',
     fecha_cita: '',
-    motivo: ''
+    motivo: '',
+    especialidad_id: '',
+    medico_id: ''
   });
+  
   const [citas, setCitas] = useState([]);
+  const [especialidades, setEspecialidades] = useState([]);
+  const [medicos, setMedicos] = useState([]);
+  
   const [editingCitaId, setEditingCitaId] = useState(null);
   const [editFormData, setEditFormData] = useState({ fecha_cita: '', motivo: '' });
 
@@ -27,11 +33,41 @@ function AgendarCita() {
     }
   };
 
+  // Obtener especialidades y médicos
+  const fetchEspecialidades = async () => {
+    try {
+      const response = await axios.get('http://localhost:5000/api/especialidades');
+      setEspecialidades(response.data);
+    } catch (error) {
+      console.error(error);
+      alert('Error al obtener las especialidades');
+    }
+  };
+
+  const fetchMedicosByEspecialidad = async (especialidad_id) => {
+    try {
+      const response = await axios.get(`http://localhost:5000/api/medicos?especialidad_id=${especialidad_id}`);
+      setMedicos(response.data);
+    } catch (error) {
+      console.error(error);
+      alert('Error al obtener los médicos');
+    }
+  };
+
   useEffect(() => {
     if (patientData) {
       fetchCitas();
+      fetchEspecialidades();
     }
   }, [patientData]);
+
+  useEffect(() => {
+    if (formData.especialidad_id) {
+      fetchMedicosByEspecialidad(formData.especialidad_id);
+    } else {
+      setMedicos([]);
+    }
+  }, [formData.especialidad_id]);
 
   if (!patientData) {
     return <Navigate to="/" />;
@@ -47,7 +83,7 @@ function AgendarCita() {
     try {
       const response = await axios.post('http://localhost:5000/api/citas', formData);
       alert(response.data.message);
-      setFormData({ ...formData, fecha_cita: '', motivo: '' });
+      setFormData({ ...formData, fecha_cita: '', motivo: '', especialidad_id: '', medico_id: '' });
       fetchCitas();
     } catch (error) {
       alert('Hubo un error al agendar la cita');
@@ -110,6 +146,45 @@ function AgendarCita() {
               <label className="form-label">Paciente:</label>
               <input type="text" className="form-control" value={`${patientData.nombre} ${patientData.apellido}`} disabled />
             </div>
+            
+            {/* Dropdown para Especialidad */}
+            <div className="mb-3">
+              <label className="form-label">Especialidad:</label>
+              <select 
+                className="form-control" 
+                name="especialidad_id" 
+                value={formData.especialidad_id} 
+                onChange={handleChange} 
+                required
+              >
+                <option value="">Seleccione una especialidad</option>
+                {especialidades.map((especialidad) => (
+                  <option key={especialidad.id} value={especialidad.id}>
+                    {especialidad.nombre}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            {/* Dropdown para Médico según la especialidad seleccionada */}
+            <div className="mb-3">
+              <label className="form-label">Médico:</label>
+              <select 
+                className="form-control" 
+                name="medico_id" 
+                value={formData.medico_id} 
+                onChange={handleChange} 
+                required
+              >
+                <option value="">Seleccione un médico</option>
+                {medicos.map((medico) => (
+                  <option key={medico.id} value={medico.id}>
+                    {medico.nombre} {medico.apellido}
+                  </option>
+                ))}
+              </select>
+            </div>
+
             <div className="mb-3">
               <label className="form-label">Fecha de la Cita:</label>
               <input
@@ -121,6 +196,7 @@ function AgendarCita() {
                 required
               />
             </div>
+
             <div className="mb-3">
               <label className="form-label">Motivo de la Cita:</label>
               <input
