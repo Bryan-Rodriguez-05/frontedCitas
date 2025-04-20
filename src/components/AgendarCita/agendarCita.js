@@ -120,8 +120,7 @@ function AgendarCita() {
     try {
       const formattedFecha = editFormData.fecha_cita.replace('T',' ');
       await axios.put(`http://localhost:5000/api/citas/${citaId}`, {
-        paciente_id: patientData.id,
-        medico_id:   editFormData.medico_id,   // <- nuevo
+        
         fecha_cita:  formattedFecha,
         motivo:      editFormData.motivo
       });
@@ -266,27 +265,7 @@ function AgendarCita() {
                           cita.motivo
                         )}
                       </td>
-                      <td>
-                        {editingCitaId === cita.id ? (
-                          <select
-                            name="medico_id"
-                            value={editFormData.medico_id}
-                            onChange={handleEditChange}
-                            className="form-control"
-                            required
-                          >
-                            <option value="">Seleccione un médico</option>
-                            {medicos.map(m => (
-                              <option key={m.id} value={m.id}>
-                                {m.nombre} {m.apellido}
-                              </option>
-                            ))}
-                          </select>
-                        ) : (
-                          `${cita.medico_nombre} ${cita.medico_apellido}`
-                        )}
-                      </td>
-
+                      
                       <td>
                         {editingCitaId === cita.id ? (
                           <>
