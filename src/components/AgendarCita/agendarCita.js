@@ -14,13 +14,18 @@ function AgendarCita() {
     especialidad_id: '',
     medico_id: ''
   });
-  
+
   const [citas, setCitas] = useState([]);
   const [especialidades, setEspecialidades] = useState([]);
   const [medicos, setMedicos] = useState([]);
-  
+
   const [editingCitaId, setEditingCitaId] = useState(null);
-  const [editFormData, setEditFormData] = useState({ fecha_cita: '', motivo: '' });
+  const [editFormData, setEditFormData] = useState({
+    fecha_cita: '',
+    motivo: '',
+    medico_id: ''
+  });
+
 
   // Función para obtener las citas del paciente
   const fetchCitas = async () => {
@@ -93,9 +98,13 @@ function AgendarCita() {
 
   const startEditing = (cita) => {
     setEditingCitaId(cita.id);
-    const formattedDate = new Date(cita.fecha_cita).toISOString().substring(0, 16);
-    setEditFormData({ fecha_cita: formattedDate, motivo: cita.motivo });
+    setEditFormData({
+      fecha_cita: new Date(cita.fecha_cita).toISOString().slice(0, 16),
+      motivo: cita.motivo,
+      medico_id: cita.medico_id
+    });
   };
+
 
   const cancelEditing = () => {
     setEditingCitaId(null);
@@ -109,20 +118,22 @@ function AgendarCita() {
 
   const saveEdit = async (citaId) => {
     try {
-      const formattedFecha = editFormData.fecha_cita.replace('T', ' ');
-      await axios.put(`http://localhost:5000/api/citas/${parseInt(citaId)}`, {
-        paciente_id: parseInt(patientData.id),
-        fecha_cita: formattedFecha,
-        motivo: editFormData.motivo
+      const formattedFecha = editFormData.fecha_cita.replace('T',' ');
+      await axios.put(`http://localhost:5000/api/citas/${citaId}`, {
+        paciente_id: patientData.id,
+        medico_id:   editFormData.medico_id,   // <- nuevo
+        fecha_cita:  formattedFecha,
+        motivo:      editFormData.motivo
       });
       alert('Cita actualizada exitosamente');
       setEditingCitaId(null);
       fetchCitas();
     } catch (error) {
+      console.error(error.response?.data || error);
       alert('Error al actualizar la cita');
-      console.error(error);
     }
   };
+  
 
   const deleteCita = async (citaId) => {
     if (!window.confirm('¿Estás seguro de eliminar esta cita?')) return;
@@ -146,15 +157,15 @@ function AgendarCita() {
               <label className="form-label">Paciente:</label>
               <input type="text" className="form-control" value={`${patientData.nombre} ${patientData.apellido}`} disabled />
             </div>
-            
+
             {/* Dropdown para Especialidad */}
             <div className="mb-3">
               <label className="form-label">Especialidad:</label>
-              <select 
-                className="form-control" 
-                name="especialidad_id" 
-                value={formData.especialidad_id} 
-                onChange={handleChange} 
+              <select
+                className="form-control"
+                name="especialidad_id"
+                value={formData.especialidad_id}
+                onChange={handleChange}
                 required
               >
                 <option value="">Seleccione una especialidad</option>
@@ -169,11 +180,11 @@ function AgendarCita() {
             {/* Dropdown para Médico según la especialidad seleccionada */}
             <div className="mb-3">
               <label className="form-label">Médico:</label>
-              <select 
-                className="form-control" 
-                name="medico_id" 
-                value={formData.medico_id} 
-                onChange={handleChange} 
+              <select
+                className="form-control"
+                name="medico_id"
+                value={formData.medico_id}
+                onChange={handleChange}
                 required
               >
                 <option value="">Seleccione un médico</option>
@@ -255,6 +266,27 @@ function AgendarCita() {
                           cita.motivo
                         )}
                       </td>
+                      <td>
+                        {editingCitaId === cita.id ? (
+                          <select
+                            name="medico_id"
+                            value={editFormData.medico_id}
+                            onChange={handleEditChange}
+                            className="form-control"
+                            required
+                          >
+                            <option value="">Seleccione un médico</option>
+                            {medicos.map(m => (
+                              <option key={m.id} value={m.id}>
+                                {m.nombre} {m.apellido}
+                              </option>
+                            ))}
+                          </select>
+                        ) : (
+                          `${cita.medico_nombre} ${cita.medico_apellido}`
+                        )}
+                      </td>
+
                       <td>
                         {editingCitaId === cita.id ? (
                           <>
