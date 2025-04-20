@@ -59,6 +59,22 @@ function AgendarCita() {
     }
   };
 
+  // Devuelve un string "YYYY-MM-DDThh:mm" en TU hora local
+  // Devuelve un string "YYYY-MM-DDThh:mm" en TU hora local
+  function formatDateForInput(dateString) {
+    const date = new Date(dateString);
+    const pad = (n) => n.toString().padStart(2, '0');
+
+    const year = date.getFullYear();
+    const month = pad(date.getMonth() + 1);
+    const day = pad(date.getDate());
+    const hours = pad(date.getHours());
+    const minutes = pad(date.getMinutes());
+
+    return `${year}-${month}-${day}T${hours}:${minutes}`;
+  }
+
+
   useEffect(() => {
     if (patientData) {
       fetchCitas();
@@ -99,9 +115,8 @@ function AgendarCita() {
   const startEditing = (cita) => {
     setEditingCitaId(cita.id);
     setEditFormData({
-      fecha_cita: new Date(cita.fecha_cita).toISOString().slice(0, 16),
-      motivo: cita.motivo,
-      medico_id: cita.medico_id
+      fecha_cita: formatDateForInput(cita.fecha_cita), // ya sin ajustar offset
+      motivo: cita.motivo
     });
   };
 
@@ -118,11 +133,11 @@ function AgendarCita() {
 
   const saveEdit = async (citaId) => {
     try {
-      const formattedFecha = editFormData.fecha_cita.replace('T',' ');
+      const formattedFecha = editFormData.fecha_cita.replace('T', ' ');
       await axios.put(`http://localhost:5000/api/citas/${citaId}`, {
-        
-        fecha_cita:  formattedFecha,
-        motivo:      editFormData.motivo
+
+        fecha_cita: formattedFecha,
+        motivo: editFormData.motivo
       });
       alert('Cita actualizada exitosamente');
       setEditingCitaId(null);
@@ -132,7 +147,7 @@ function AgendarCita() {
       alert('Error al actualizar la cita');
     }
   };
-  
+
 
   const deleteCita = async (citaId) => {
     if (!window.confirm('¿Estás seguro de eliminar esta cita?')) return;
@@ -265,7 +280,7 @@ function AgendarCita() {
                           cita.motivo
                         )}
                       </td>
-                      
+
                       <td>
                         {editingCitaId === cita.id ? (
                           <>
