@@ -26,11 +26,15 @@ function AgendarCita() {
     medico_id: ''
   });
 
-
   // Función para obtener las citas del paciente
   const fetchCitas = async () => {
     try {
-      const response = await axios.get(`http://localhost:5000/api/citas?paciente_id=${patientData.id}`);
+      const token = localStorage.getItem('token');  // Obtener el token desde el almacenamiento local
+
+      const response = await axios.get(`http://localhost:5000/api/citas?paciente_id=${patientData.id}`, {
+        headers: { Authorization: `Bearer ${token}` }  // Agregar el token en los encabezados
+      });
+
       setCitas(response.data);
     } catch (error) {
       console.error(error);
@@ -41,7 +45,11 @@ function AgendarCita() {
   // Obtener especialidades y médicos
   const fetchEspecialidades = async () => {
     try {
-      const response = await axios.get('http://localhost:5000/api/especialidades');
+      const token = localStorage.getItem('token');
+      
+      const response = await axios.get('http://localhost:5000/api/especialidades', {
+        headers: { Authorization: `Bearer ${token}` }
+      });
       setEspecialidades(response.data);
     } catch (error) {
       console.error(error);
@@ -51,29 +59,17 @@ function AgendarCita() {
 
   const fetchMedicosByEspecialidad = async (especialidad_id) => {
     try {
-      const response = await axios.get(`http://localhost:5000/api/medicos?especialidad_id=${especialidad_id}`);
+      const token = localStorage.getItem('token');
+      
+      const response = await axios.get(`http://localhost:5000/api/medicos?especialidad_id=${especialidad_id}`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
       setMedicos(response.data);
     } catch (error) {
       console.error(error);
       alert('Error al obtener los médicos');
     }
   };
-
-  // Devuelve un string "YYYY-MM-DDThh:mm" en TU hora local
-  // Devuelve un string "YYYY-MM-DDThh:mm" en TU hora local
-  function formatDateForInput(dateString) {
-    const date = new Date(dateString);
-    const pad = (n) => n.toString().padStart(2, '0');
-
-    const year = date.getFullYear();
-    const month = pad(date.getMonth() + 1);
-    const day = pad(date.getDate());
-    const hours = pad(date.getHours());
-    const minutes = pad(date.getMinutes());
-
-    return `${year}-${month}-${day}T${hours}:${minutes}`;
-  }
-
 
   useEffect(() => {
     if (patientData) {
@@ -102,7 +98,12 @@ function AgendarCita() {
   const agendarCita = async (e) => {
     e.preventDefault();
     try {
-      const response = await axios.post('http://localhost:5000/api/citas', formData);
+      const token = localStorage.getItem('token');
+      
+      const response = await axios.post('http://localhost:5000/api/citas', formData, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+
       alert(response.data.message);
       setFormData({ ...formData, fecha_cita: '', motivo: '', especialidad_id: '', medico_id: '' });
       fetchCitas();
@@ -115,11 +116,10 @@ function AgendarCita() {
   const startEditing = (cita) => {
     setEditingCitaId(cita.id);
     setEditFormData({
-      fecha_cita: formatDateForInput(cita.fecha_cita), // ya sin ajustar offset
+      fecha_cita: new Date(cita.fecha_cita).toISOString().slice(0, 16),
       motivo: cita.motivo
     });
   };
-
 
   const cancelEditing = () => {
     setEditingCitaId(null);
@@ -133,26 +133,34 @@ function AgendarCita() {
 
   const saveEdit = async (citaId) => {
     try {
+      const token = localStorage.getItem('token');
       const formattedFecha = editFormData.fecha_cita.replace('T', ' ');
-      await axios.put(`http://localhost:5000/api/citas/${citaId}`, {
 
+      await axios.put(`http://localhost:5000/api/citas/${citaId}`, {
         fecha_cita: formattedFecha,
         motivo: editFormData.motivo
+      }, {
+        headers: { Authorization: `Bearer ${token}` }
       });
+
       alert('Cita actualizada exitosamente');
       setEditingCitaId(null);
       fetchCitas();
     } catch (error) {
-      console.error(error.response?.data || error);
+      console.error(error);
       alert('Error al actualizar la cita');
     }
   };
 
-
   const deleteCita = async (citaId) => {
     if (!window.confirm('¿Estás seguro de eliminar esta cita?')) return;
     try {
-      await axios.delete(`http://localhost:5000/api/citas/${parseInt(citaId)}`);
+      const token = localStorage.getItem('token');
+      
+      await axios.delete(`http://localhost:5000/api/citas/${citaId}`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+
       alert('Cita eliminada exitosamente');
       fetchCitas();
     } catch (error) {
