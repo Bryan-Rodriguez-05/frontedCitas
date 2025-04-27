@@ -11,16 +11,24 @@ function LoginRegister() {
   const handleLogin = async () => {
     try {
       const response = await axios.post('http://localhost:5000/api/login', { email, dni });
-      if (response.data.success) {
-        setIsLoggedIn(true);
-        setPatientData(response.data.patient);
-      } else {
-        alert(response.data.error);
-      }
+      const { success, token, patient } = response.data;
+      if (!success) return alert(response.data.error);
+
+      // 1) guardo el token
+      localStorage.setItem('token', token);
+
+      // 2) configuro Axios para usarlo en todas las peticiones
+      axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+
+      // 3) redirijo
+      setIsLoggedIn(true);
+      setPatientData(patient);
     } catch (error) {
+      console.error(error);
       alert('Error al iniciar sesión');
     }
   };
+
 
   const handleRegister = () => {
     window.location.href = '/registro';
