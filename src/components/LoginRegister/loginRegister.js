@@ -4,13 +4,13 @@ import { Navigate } from 'react-router-dom';
 
 function LoginRegister() {
   const [email, setEmail] = useState('');
-  const [dni, setDni] = useState('');
+  const [contrasenia, setDni] = useState('');
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [patientData, setPatientData] = useState(null);
 
   const handleLogin = async () => {
     try {
-      const response = await axios.post('http://localhost:5000/api/login', { email, dni });
+      const response = await axios.post('http://localhost:5000/api/login', { email, contrasenia });
       const { success, token, patient } = response.data;
       if (!success) return alert(response.data.error);
 
@@ -55,8 +55,8 @@ function LoginRegister() {
                 <input
                   type="text"
                   className="form-control"
-                  placeholder="DNI"
-                  value={dni}
+                  placeholder="Contraseña"
+                  value={contrasenia}
                   onChange={(e) => setDni(e.target.value)}
                 />
               </div>

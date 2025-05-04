@@ -9,7 +9,8 @@ function Register() {
     correo: '',
     fecha_nacimiento: '',
     direccion: '',
-    telefono: ''
+    telefono: '',
+    contrasenia:''
   });
 
   const handleChange = (e) => {
@@ -71,6 +72,16 @@ function Register() {
                 value={formData.correo}
                 onChange={handleChange}
                 placeholder="Correo"
+                className="form-control"
+              />
+            </div>
+            <div className="mb-3">
+              <input
+                type="text"
+                name="contrasenia"
+                value={formData.contrasenia}
+                onChange={handleChange}
+                placeholder="Contraseña"
                 className="form-control"
               />
             </div>
