@@ -4,7 +4,7 @@ import { Navigate } from 'react-router-dom';
 
 function LoginRegister() {
   const [email, setEmail] = useState('');
-  const [contrasenia, setDni] = useState('');
+  const [contrasenia, setContrasenia] = useState('');
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [patientData, setPatientData] = useState(null);
 
@@ -57,7 +57,7 @@ function LoginRegister() {
                   className="form-control"
                   placeholder="Contraseña"
                   value={contrasenia}
-                  onChange={(e) => setDni(e.target.value)}
+                  onChange={(e) => setContrasenia(e.target.value)}
                 />
               </div>
               <div className="d-grid gap-2">
