@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
 import { Navigate, useLocation } from 'react-router-dom';
 
@@ -22,34 +22,32 @@ function AgendarCita() {
   const [editingCitaId, setEditingCitaId] = useState(null);
   const [editFormData, setEditFormData] = useState({
     fecha_cita: '',
-    motivo: '',
-    medico_id: ''
+    motivo: ''
   });
 
   // Función para obtener las citas del paciente
-  const fetchCitas = async () => {
+  const fetchCitas = useCallback(async () => {
     try {
-      const token = localStorage.getItem('token');  // Obtener el token desde el almacenamiento local
-
-      const response = await axios.get(`http://localhost:5000/api/citas?paciente_id=${patientData.id}`, {
-        headers: { Authorization: `Bearer ${token}` }  // Agregar el token en los encabezados
-      });
-
+      const token = localStorage.getItem('token');
+      const response = await axios.get(
+        `http://localhost:5000/api/citas?paciente_id=${patientData.id}`,
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
       setCitas(response.data);
     } catch (error) {
       console.error(error);
       alert('Error al obtener las citas');
     }
-  };
+  }, [patientData]);
 
   // Obtener especialidades y médicos
   const fetchEspecialidades = async () => {
     try {
       const token = localStorage.getItem('token');
-      
-      const response = await axios.get('http://localhost:5000/api/especialidades', {
-        headers: { Authorization: `Bearer ${token}` }
-      });
+      const response = await axios.get(
+        'http://localhost:5000/api/especialidades',
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
       setEspecialidades(response.data);
     } catch (error) {
       console.error(error);
@@ -60,10 +58,10 @@ function AgendarCita() {
   const fetchMedicosByEspecialidad = async (especialidad_id) => {
     try {
       const token = localStorage.getItem('token');
-      
-      const response = await axios.get(`http://localhost:5000/api/medicos?especialidad_id=${especialidad_id}`, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
+      const response = await axios.get(
+        `http://localhost:5000/api/medicos?especialidad_id=${especialidad_id}`,
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
       setMedicos(response.data);
     } catch (error) {
       console.error(error);
@@ -76,7 +74,7 @@ function AgendarCita() {
       fetchCitas();
       fetchEspecialidades();
     }
-  }, [patientData]);
+  }, [patientData, fetchCitas]);
 
   useEffect(() => {
     if (formData.especialidad_id) {
@@ -99,13 +97,20 @@ function AgendarCita() {
     e.preventDefault();
     try {
       const token = localStorage.getItem('token');
-      
-      const response = await axios.post('http://localhost:5000/api/citas', formData, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
+      const response = await axios.post(
+        'http://localhost:5000/api/citas',
+        formData,
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
 
       alert(response.data.message);
-      setFormData({ ...formData, fecha_cita: '', motivo: '', especialidad_id: '', medico_id: '' });
+      setFormData({
+        ...formData,
+        fecha_cita: '',
+        motivo: '',
+        especialidad_id: '',
+        medico_id: ''
+      });
       fetchCitas();
     } catch (error) {
       alert('Hubo un error al agendar la cita');
@@ -135,14 +140,14 @@ function AgendarCita() {
     try {
       const token = localStorage.getItem('token');
       const formattedFecha = editFormData.fecha_cita.replace('T', ' ');
-
-      await axios.put(`http://localhost:5000/api/citas/${citaId}`, {
-        fecha_cita: formattedFecha,
-        motivo: editFormData.motivo
-      }, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-
+      await axios.put(
+        `http://localhost:5000/api/citas/${citaId}`,
+        {
+          fecha_cita: formattedFecha,
+          motivo: editFormData.motivo
+        },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
       alert('Cita actualizada exitosamente');
       setEditingCitaId(null);
       fetchCitas();
@@ -156,11 +161,9 @@ function AgendarCita() {
     if (!window.confirm('¿Estás seguro de eliminar esta cita?')) return;
     try {
       const token = localStorage.getItem('token');
-      
       await axios.delete(`http://localhost:5000/api/citas/${citaId}`, {
         headers: { Authorization: `Bearer ${token}` }
       });
-
       alert('Cita eliminada exitosamente');
       fetchCitas();
     } catch (error) {
@@ -177,7 +180,12 @@ function AgendarCita() {
           <form onSubmit={agendarCita}>
             <div className="mb-3">
               <label className="form-label">Paciente:</label>
-              <input type="text" className="form-control" value={`${patientData.nombre} ${patientData.apellido}`} disabled />
+              <input
+                type="text"
+                className="form-control"
+                value={`${patientData.nombre} ${patientData.apellido}`}
+                disabled
+              />
             </div>
 
             {/* Dropdown para Especialidad */}
@@ -191,9 +199,9 @@ function AgendarCita() {
                 required
               >
                 <option value="">Seleccione una especialidad</option>
-                {especialidades.map((especialidad) => (
-                  <option key={especialidad.id} value={especialidad.id}>
-                    {especialidad.nombre}
+                {especialidades.map((esp) => (
+                  <option key={esp.id} value={esp.id}>
+                    {esp.nombre}
                   </option>
                 ))}
               </select>
@@ -210,14 +218,27 @@ function AgendarCita() {
                 required
               >
                 <option value="">Seleccione un médico</option>
-                {medicos.map((medico) => (
-                  <option key={medico.id} value={medico.id}>
-                    {medico.nombre} {medico.apellido}
+                {medicos.map((med) => (
+                  <option key={med.id} value={med.id}>
+                    {med.nombre} {med.apellido}
                   </option>
                 ))}
               </select>
             </div>
-
+            <div className="mb-3">
+              <label className="form-label">Tipo de Cita:</label>
+              <select
+                className="form-control"
+                name="tipo"
+                value={formData.tipo}
+                onChange={handleChange}
+                required
+              >
+                <option value="">Seleccione un tipo</option>
+                <option value="General">General</option>
+                <option value="Urgente">Urgente</option>
+              </select>
+            </div>
             <div className="mb-3">
               <label className="form-label">Fecha de la Cita:</label>
               <input
@@ -241,7 +262,10 @@ function AgendarCita() {
                 required
               />
             </div>
-            <button type="submit" className="btn btn-primary w-100">Agendar Cita</button>
+
+            <button type="submit" className="btn btn-primary w-100">
+              Agendar Cita
+            </button>
           </form>
 
           <h3 className="mt-5">Mis Citas</h3>
@@ -254,6 +278,7 @@ function AgendarCita() {
                   <tr>
                     <th>Fecha</th>
                     <th>Motivo</th>
+                    <th>Tipo</th> {/* Nueva columna */}
                     <th>Acciones</th>
                   </tr>
                 </thead>
@@ -288,17 +313,40 @@ function AgendarCita() {
                           cita.motivo
                         )}
                       </td>
-
+                      <td>
+                        {/* Mostramos el tipo que viene del backend */}
+                        {cita.tipo}
+                      </td>
                       <td>
                         {editingCitaId === cita.id ? (
                           <>
-                            <button onClick={() => saveEdit(cita.id)} className="btn btn-success btn-sm me-2">Guardar</button>
-                            <button onClick={cancelEditing} className="btn btn-secondary btn-sm">Cancelar</button>
+                            <button
+                              onClick={() => saveEdit(cita.id)}
+                              className="btn btn-success btn-sm me-2"
+                            >
+                              Guardar
+                            </button>
+                            <button
+                              onClick={cancelEditing}
+                              className="btn btn-secondary btn-sm"
+                            >
+                              Cancelar
+                            </button>
                           </>
                         ) : (
                           <>
-                            <button onClick={() => startEditing(cita)} className="btn btn-warning btn-sm me-2">Editar</button>
-                            <button onClick={() => deleteCita(cita.id)} className="btn btn-danger btn-sm">Eliminar</button>
+                            <button
+                              onClick={() => startEditing(cita)}
+                              className="btn btn-warning btn-sm me-2"
+                            >
+                              Editar
+                            </button>
+                            <button
+                              onClick={() => deleteCita(cita.id)}
+                              className="btn btn-danger btn-sm"
+                            >
+                              Eliminar
+                            </button>
                           </>
                         )}
                       </td>
