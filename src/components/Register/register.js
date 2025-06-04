@@ -1,5 +1,7 @@
+// src/components/Register/register.js
 import React, { useState } from 'react';
 import axios from 'axios';
+import { useNavigate } from 'react-router-dom';
 
 function Register() {
   const [formData, setFormData] = useState({
@@ -10,8 +12,9 @@ function Register() {
     fecha_nacimiento: '',
     direccion: '',
     telefono: '',
-    contrasenia:''
+    contrasenia: ''
   });
+  const navigate = useNavigate();
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -21,10 +24,11 @@ function Register() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      await axios.post('http://localhost:5000/api/pacientes', formData);
+      await axios.post('http://localhost:5000/api/pacientes/registro', formData);
       alert('Paciente registrado exitosamente');
-      window.location.href = '/';
+      navigate('/');
     } catch (error) {
+      console.error('Error al registrar el paciente:', error);
       alert('Error al registrar el paciente');
     }
   };
@@ -43,6 +47,7 @@ function Register() {
                 onChange={handleChange}
                 placeholder="Nombre"
                 className="form-control"
+                required
               />
             </div>
             <div className="mb-3">
@@ -53,6 +58,7 @@ function Register() {
                 onChange={handleChange}
                 placeholder="Apellido"
                 className="form-control"
+                required
               />
             </div>
             <div className="mb-3">
@@ -63,6 +69,7 @@ function Register() {
                 onChange={handleChange}
                 placeholder="DNI"
                 className="form-control"
+                required
               />
             </div>
             <div className="mb-3">
@@ -73,16 +80,18 @@ function Register() {
                 onChange={handleChange}
                 placeholder="Correo"
                 className="form-control"
+                required
               />
             </div>
             <div className="mb-3">
               <input
-                type="text"
+                type="password"
                 name="contrasenia"
                 value={formData.contrasenia}
                 onChange={handleChange}
                 placeholder="Contraseña"
                 className="form-control"
+                required
               />
             </div>
             <div className="mb-3">

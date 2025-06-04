@@ -1,81 +1,75 @@
+// src/components/AgendarCita/agendarCita.js
 import React, { useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
 import { Navigate, useLocation } from 'react-router-dom';
 
 function AgendarCita() {
   const location = useLocation();
-  const patientData = location.state ? location.state.patientData : null;
+  const userData = location.state ? location.state.userData : null;
 
-  // Declaramos todos los hooks incondicionalmente
   const [formData, setFormData] = useState({
-    paciente_id: patientData ? patientData.id : '',
+    medico_usuario_id: '',
+    especialidad_id: '',
     fecha_cita: '',
     motivo: '',
-    especialidad_id: '',
-    medico_id: ''
+    tipo: ''
   });
-
-  const [citas, setCitas] = useState([]);
   const [especialidades, setEspecialidades] = useState([]);
   const [medicos, setMedicos] = useState([]);
-
+  const [citas, setCitas] = useState([]);
   const [editingCitaId, setEditingCitaId] = useState(null);
   const [editFormData, setEditFormData] = useState({
     fecha_cita: '',
-    motivo: ''
+    motivo: '',
+    tipo: ''
   });
 
-  // Función para obtener las citas del paciente
+  // 1) Traer las citas del paciente
   const fetchCitas = useCallback(async () => {
     try {
-      const token = localStorage.getItem('token');
-      const response = await axios.get(
-        `http://localhost:5000/api/citas?paciente_id=${patientData.id}`,
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
+      const response = await axios.get('http://localhost:5000/api/citas/mis-citas');
       setCitas(response.data);
     } catch (error) {
-      console.error(error);
-      alert('Error al obtener las citas');
+      console.error('Error al obtener las citas:', error);
+      if (error.response && error.response.status === 401) {
+        // Token expirado o inválido → redirigir a login
+        window.location.href = '/';
+      }
     }
-  }, [patientData]);
+  }, []);
 
-  // Obtener especialidades y médicos
+  // 2) Traer especialidades
   const fetchEspecialidades = async () => {
     try {
-      const token = localStorage.getItem('token');
-      const response = await axios.get(
-        'http://localhost:5000/api/especialidades',
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
+      const response = await axios.get('http://localhost:5000/api/especialidades');
       setEspecialidades(response.data);
     } catch (error) {
-      console.error(error);
+      console.error('Error al obtener especialidades:', error);
       alert('Error al obtener las especialidades');
     }
   };
 
-  const fetchMedicosByEspecialidad = async (especialidad_id) => {
+  // 3) Traer médicos según especialidad
+  const fetchMedicosByEspecialidad = async (especialidadId) => {
     try {
-      const token = localStorage.getItem('token');
       const response = await axios.get(
-        `http://localhost:5000/api/medicos?especialidad_id=${especialidad_id}`,
-        { headers: { Authorization: `Bearer ${token}` } }
+        `http://localhost:5000/api/medicos?especialidad_id=${especialidadId}`
       );
       setMedicos(response.data);
     } catch (error) {
-      console.error(error);
+      console.error('Error al obtener médicos:', error);
       alert('Error al obtener los médicos');
     }
   };
 
+  // Al montar el componente: traer especialidades y citas
   useEffect(() => {
-    if (patientData) {
-      fetchCitas();
-      fetchEspecialidades();
-    }
-  }, [patientData, fetchCitas]);
+    if (!userData) return;
+    fetchEspecialidades();
+    fetchCitas();
+  }, [userData, fetchCitas]);
 
+  // Cuando cambie la especialidad, traer médicos
   useEffect(() => {
     if (formData.especialidad_id) {
       fetchMedicosByEspecialidad(formData.especialidad_id);
@@ -84,7 +78,8 @@ function AgendarCita() {
     }
   }, [formData.especialidad_id]);
 
-  if (!patientData) {
+  // Si no hay usuario autenticado, redirigir a login
+  if (!userData) {
     return <Navigate to="/" />;
   }
 
@@ -96,25 +91,33 @@ function AgendarCita() {
   const agendarCita = async (e) => {
     e.preventDefault();
     try {
-      const token = localStorage.getItem('token');
-      const response = await axios.post(
-        'http://localhost:5000/api/citas',
-        formData,
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
-
+      const body = {
+        medico_usuario_id: formData.medico_usuario_id,
+        fecha_cita: formData.fecha_cita,
+        motivo: formData.motivo,
+        tipo: formData.tipo
+      };
+      const response = await axios.post('http://localhost:5000/api/citas', body);
       alert(response.data.message);
+
+      // Limpiar campos (salvo paciente)
       setFormData({
         ...formData,
+        medico_usuario_id: '',
+        especialidad_id: '',
         fecha_cita: '',
         motivo: '',
-        especialidad_id: '',
-        medico_id: ''
+        tipo: ''
       });
+      setMedicos([]);
       fetchCitas();
     } catch (error) {
-      alert('Hubo un error al agendar la cita');
-      console.error(error);
+      console.error('Error al agendar la cita:', error);
+      if (error.response && error.response.status === 401) {
+        window.location.href = '/';
+      } else {
+        alert('Hubo un error al agendar la cita');
+      }
     }
   };
 
@@ -122,13 +125,18 @@ function AgendarCita() {
     setEditingCitaId(cita.id);
     setEditFormData({
       fecha_cita: new Date(cita.fecha_cita).toISOString().slice(0, 16),
-      motivo: cita.motivo
+      motivo: cita.motivo,
+      tipo: cita.tipo
     });
   };
 
   const cancelEditing = () => {
     setEditingCitaId(null);
-    setEditFormData({ fecha_cita: '', motivo: '' });
+    setEditFormData({
+      fecha_cita: '',
+      motivo: '',
+      tipo: ''
+    });
   };
 
   const handleEditChange = (e) => {
@@ -138,37 +146,38 @@ function AgendarCita() {
 
   const saveEdit = async (citaId) => {
     try {
-      const token = localStorage.getItem('token');
-      const formattedFecha = editFormData.fecha_cita.replace('T', ' ');
-      await axios.put(
-        `http://localhost:5000/api/citas/${citaId}`,
-        {
-          fecha_cita: formattedFecha,
-          motivo: editFormData.motivo
-        },
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
+      const body = {
+        fecha_cita: editFormData.fecha_cita,
+        motivo: editFormData.motivo,
+        tipo: editFormData.tipo
+      };
+      await axios.put(`http://localhost:5000/api/citas/${citaId}`, body);
       alert('Cita actualizada exitosamente');
       setEditingCitaId(null);
       fetchCitas();
     } catch (error) {
-      console.error(error);
-      alert('Error al actualizar la cita');
+      console.error('Error al actualizar la cita:', error);
+      if (error.response && error.response.status === 401) {
+        window.location.href = '/';
+      } else {
+        alert('Error al actualizar la cita');
+      }
     }
   };
 
   const deleteCita = async (citaId) => {
     if (!window.confirm('¿Estás seguro de eliminar esta cita?')) return;
     try {
-      const token = localStorage.getItem('token');
-      await axios.delete(`http://localhost:5000/api/citas/${citaId}`, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
+      await axios.delete(`http://localhost:5000/api/citas/${citaId}`);
       alert('Cita eliminada exitosamente');
       fetchCitas();
     } catch (error) {
-      alert('Error al eliminar la cita');
-      console.error(error);
+      console.error('Error al eliminar la cita:', error);
+      if (error.response && error.response.status === 401) {
+        window.location.href = '/';
+      } else {
+        alert('Error al eliminar la cita');
+      }
     }
   };
 
@@ -183,7 +192,7 @@ function AgendarCita() {
               <input
                 type="text"
                 className="form-control"
-                value={`${patientData.nombre} ${patientData.apellido}`}
+                value={`${userData.nombre} ${userData.apellido}`}
                 disabled
               />
             </div>
@@ -212,19 +221,21 @@ function AgendarCita() {
               <label className="form-label">Médico:</label>
               <select
                 className="form-control"
-                name="medico_id"
-                value={formData.medico_id}
+                name="medico_usuario_id"
+                value={formData.medico_usuario_id}
                 onChange={handleChange}
                 required
               >
                 <option value="">Seleccione un médico</option>
                 {medicos.map((med) => (
-                  <option key={med.id} value={med.id}>
+                  <option key={med.usuario_id} value={med.usuario_id}>
                     {med.nombre} {med.apellido}
                   </option>
                 ))}
               </select>
             </div>
+
+            {/* Tipo de cita */}
             <div className="mb-3">
               <label className="form-label">Tipo de Cita:</label>
               <select
@@ -239,6 +250,8 @@ function AgendarCita() {
                 <option value="Urgente">Urgente</option>
               </select>
             </div>
+
+            {/* Fecha y hora */}
             <div className="mb-3">
               <label className="form-label">Fecha de la Cita:</label>
               <input
@@ -251,6 +264,7 @@ function AgendarCita() {
               />
             </div>
 
+            {/* Motivo */}
             <div className="mb-3">
               <label className="form-label">Motivo de la Cita:</label>
               <input
@@ -278,7 +292,7 @@ function AgendarCita() {
                   <tr>
                     <th>Fecha</th>
                     <th>Motivo</th>
-                    <th>Tipo</th> {/* Nueva columna */}
+                    <th>Tipo</th>
                     <th>Acciones</th>
                   </tr>
                 </thead>
@@ -314,8 +328,20 @@ function AgendarCita() {
                         )}
                       </td>
                       <td>
-                        {/* Mostramos el tipo que viene del backend */}
-                        {cita.tipo}
+                        {editingCitaId === cita.id ? (
+                          <select
+                            name="tipo"
+                            value={editFormData.tipo}
+                            onChange={handleEditChange}
+                            className="form-control"
+                            required
+                          >
+                            <option value="General">General</option>
+                            <option value="Urgente">Urgente</option>
+                          </select>
+                        ) : (
+                          cita.tipo
+                        )}
                       </td>
                       <td>
                         {editingCitaId === cita.id ? (
@@ -361,5 +387,6 @@ function AgendarCita() {
     </div>
   );
 }
+
 
 export default AgendarCita;
