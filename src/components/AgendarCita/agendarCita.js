@@ -50,14 +50,16 @@ function AgendarCita() {
   };
 
   // 3) Traer médicos según especialidad
-  const fetchMedicosByEspecialidad = async (especialidadId) => {
+  const fetchMedicosByEspecialidad = async (especialidad_id) => {
     try {
+      const token = localStorage.getItem('token');
       const response = await axios.get(
-        `http://localhost:5000/api/medicos?especialidad_id=${especialidadId}`
+        `http://localhost:5000/api/medicos?especialidad_id=${especialidad_id}`,
+        { headers: { Authorization:`Bearer ${token}` } }
       );
       setMedicos(response.data);
     } catch (error) {
-      console.error('Error al obtener médicos:', error);
+      console.error(error);
       alert('Error al obtener los médicos');
     }
   };
