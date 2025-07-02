@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from 'react';
+// src/components/Admin/AdminUsuarios.js
+import React, { useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
 
 function AdminUsuarios() {
@@ -6,32 +7,32 @@ function AdminUsuarios() {
   const [formData, setFormData] = useState({
     correo: '',
     contrasenia: '',
-    rol: 'PACIENTE',  // Por defecto, rol paciente
+    rol: 'PACIENTE',
   });
 
-  // Cargar usuarios
-  useEffect(() => {
-    const fetchUsuarios = async () => {
-      try {
-        const response = await axios.get('http://localhost:5000/api/admin/usuarios');
-        setUsuarios(response.data);
-      } catch (error) {
-        console.error('Error al obtener usuarios', error);
-      }
-    };
-    fetchUsuarios();
+  const fetchUsuarios = useCallback(async () => {
+    try {
+      const { data } = await axios.get('http://localhost:5000/api/administradores/usuarios');
+      setUsuarios(data);
+    } catch (error) {
+      console.error('Error al obtener usuarios', error);
+    }
   }, []);
+
+  useEffect(() => {
+    fetchUsuarios();
+  }, [fetchUsuarios]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      const response = await axios.post('http://localhost:5000/api/admin/usuarios', formData);
+      await axios.post('http://localhost:5000/api/administradores/usuarios', formData);
       alert('Usuario creado exitosamente');
       setFormData({ correo: '', contrasenia: '', rol: 'PACIENTE' });
-      setUsuarios([...usuarios, response.data]);
+      fetchUsuarios();  // recargamos la lista
     } catch (error) {
-      alert('Error al crear usuario');
       console.error('Error al crear usuario', error);
+      alert('No se pudo crear el usuario');
     }
   };
 
@@ -71,9 +72,7 @@ function AdminUsuarios() {
             <option value="ADMIN">Administrador</option>
           </select>
         </div>
-        <button type="submit" className="btn btn-primary">
-          Crear Usuario
-        </button>
+        <button type="submit" className="btn btn-primary">Crear Usuario</button>
       </form>
 
       <h4 className="mt-5">Usuarios Existentes</h4>
@@ -82,18 +81,13 @@ function AdminUsuarios() {
           <tr>
             <th>Correo</th>
             <th>Rol</th>
-            <th>Acciones</th>
           </tr>
         </thead>
         <tbody>
-          {usuarios.map((usuario) => (
-            <tr key={usuario.id}>
-              <td>{usuario.correo}</td>
-              <td>{usuario.rol}</td>
-              <td>
-                <button className="btn btn-warning btn-sm">Editar</button>
-                <button className="btn btn-danger btn-sm">Eliminar</button>
-              </td>
+          {usuarios.map((u) => (
+            <tr key={u.id}>
+              <td>{u.correo}</td>
+              <td>{u.rol}</td>
             </tr>
           ))}
         </tbody>

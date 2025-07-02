@@ -1,25 +1,29 @@
-import React, { useState, useEffect } from 'react';
+// src/components/Admin/AdminCitas.js
+import React, { useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
 
 function AdminCitas() {
   const [citas, setCitas] = useState([]);
 
-  useEffect(() => {
-    const fetchCitas = async () => {
-      try {
-        const response = await axios.get('http://localhost:5000/api/admin/citas');
-        setCitas(response.data);
-      } catch (error) {
-        console.error('Error al obtener las citas', error);
-      }
-    };
-    fetchCitas();
+  // Extraemos la función fetch para poder reusarla
+  const fetchCitas = useCallback(async () => {
+    try {
+      const { data } = await axios.get('http://localhost:5000/api/administradores/citas');
+      setCitas(data);
+    } catch (error) {
+      console.error('Error al obtener las citas', error);
+    }
   }, []);
+
+  useEffect(() => {
+    fetchCitas();
+  }, [fetchCitas]);
 
   const handleDeleteCita = async (id) => {
     try {
-      await axios.delete(`http://localhost:5000/api/admin/citas/${id}`);
-      setCitas(citas.filter((cita) => cita.id !== id));
+      await axios.delete(`http://localhost:5000/api/administradores/citas/${id}`);
+      // volvemos a recargar la lista
+      fetchCitas();
     } catch (error) {
       console.error('Error al eliminar la cita', error);
     }
@@ -46,7 +50,10 @@ function AdminCitas() {
               <td>{cita.paciente_nombre} {cita.paciente_apellido}</td>
               <td>{cita.medico_nombre} {cita.medico_apellido}</td>
               <td>
-                <button className="btn btn-danger btn-sm" onClick={() => handleDeleteCita(cita.id)}>
+                <button
+                  className="btn btn-danger btn-sm"
+                  onClick={() => handleDeleteCita(cita.id)}
+                >
                   Eliminar
                 </button>
               </td>

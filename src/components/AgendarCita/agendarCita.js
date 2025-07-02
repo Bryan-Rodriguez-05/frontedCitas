@@ -8,12 +8,14 @@ function AgendarCita() {
   const userData = location.state ? location.state.userData : null;
 
   const [formData, setFormData] = useState({
+    paciente_usuario_id: userData ? userData.id: '',
     medico_usuario_id: '',
     especialidad_id: '',
     fecha_cita: '',
     motivo: '',
     tipo: ''
   });
+
   const [especialidades, setEspecialidades] = useState([]);
   const [medicos, setMedicos] = useState([]);
   const [citas, setCitas] = useState([]);
@@ -27,7 +29,12 @@ function AgendarCita() {
   // 1) Traer las citas del paciente
   const fetchCitas = useCallback(async () => {
     try {
-      const response = await axios.get('http://localhost:5000/api/citas/mis-citas');
+      const token = localStorage.getItem('token');
+      console.log(token);
+      const response = await axios.get(
+        `http://localhost:5000/api/citas/mis-citas`,
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
       setCitas(response.data);
     } catch (error) {
       console.error('Error al obtener las citas:', error);

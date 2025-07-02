@@ -1,28 +1,31 @@
-import React, { useState, useEffect } from 'react';
+// src/components/Admin/AdminEspecialidades.js
+import React, { useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
 
 function AdminEspecialidades() {
   const [especialidades, setEspecialidades] = useState([]);
   const [nombre, setNombre] = useState('');
 
-  useEffect(() => {
-    const fetchEspecialidades = async () => {
-      try {
-        const response = await axios.get('http://localhost:5000/api/admin/especialidades');
-        setEspecialidades(response.data);
-      } catch (error) {
-        console.error('Error al obtener especialidades', error);
-      }
-    };
-    fetchEspecialidades();
+  const fetchEspecialidades = useCallback(async () => {
+    try {
+      const { data } = await axios.get('http://localhost:5000/api/administradores/especialidades');
+      setEspecialidades(data);
+    } catch (error) {
+      console.error('Error al obtener especialidades', error);
+    }
   }, []);
+
+  useEffect(() => {
+    fetchEspecialidades();
+  }, [fetchEspecialidades]);
 
   const handleAddEspecialidad = async (e) => {
     e.preventDefault();
     try {
-      const response = await axios.post('http://localhost:5000/api/admin/especialidades', { nombre });
-      setEspecialidades([...especialidades, response.data]);
+      await axios.post('http://localhost:5000/api/administradores/especialidades', { nombre });
       setNombre('');
+      // recargamos la lista
+      fetchEspecialidades();
     } catch (error) {
       console.error('Error al agregar especialidad', error);
     }
@@ -30,8 +33,8 @@ function AdminEspecialidades() {
 
   const handleDeleteEspecialidad = async (id) => {
     try {
-      await axios.delete(`http://localhost:5000/api/admin/especialidades/${id}`);
-      setEspecialidades(especialidades.filter((esp) => esp.id !== id));
+      await axios.delete(`http://localhost:5000/api/administradores/especialidades/${id}`);
+      fetchEspecialidades();
     } catch (error) {
       console.error('Error al eliminar especialidad', error);
     }
@@ -55,11 +58,14 @@ function AdminEspecialidades() {
       </form>
 
       <h4 className="mt-5">Especialidades Existentes</h4>
-      <ul>
-        {especialidades.map((especialidad) => (
-          <li key={especialidad.id}>
-            {especialidad.nombre} 
-            <button className="btn btn-danger btn-sm" onClick={() => handleDeleteEspecialidad(especialidad.id)}>
+      <ul className="list-group">
+        {especialidades.map((esp) => (
+          <li key={esp.id} className="list-group-item d-flex justify-content-between align-items-center">
+            {esp.nombre}
+            <button
+              className="btn btn-danger btn-sm"
+              onClick={() => handleDeleteEspecialidad(esp.id)}
+            >
               Eliminar
             </button>
           </li>

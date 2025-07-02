@@ -15,6 +15,7 @@ function LoginRegister() {
         email,
         contrasenia
       });
+      console.log("Login Response:", response.data);
 
       const { success, token, profile } = response.data;
       if (!success) {
@@ -30,6 +31,10 @@ function LoginRegister() {
       // 3) Guardar los datos de usuario y marcar que ya estamos logueados
       setUserData(profile);
       setIsLoggedIn(true);
+
+      // Guardamos los datos del usuario en localStorage también
+      localStorage.setItem('userData', JSON.stringify(profile));
+      console.log("User data saved:", profile); // Verifica si los datos se guardan correctamente
 
     } catch (error) {
       console.error('Error al iniciar sesión:', error);
@@ -48,10 +53,10 @@ function LoginRegister() {
       return <Navigate to="/medico-citas" state={{ userData }} />;
     } else if (userData.rol === 'ADMIN') {
       // Redirigir a la ruta de administrador (por ejemplo /admin-dashboard)
-      return <Navigate to="/admin-dashboard" state={{ userData }} />;
+      return <Navigate to="/admin" state={{ userData }} />;
     } else {
       // En cualquier otro caso (p. ej. rol PACIENTE), se va a la ruta de agendar cita
-      return <Navigate to="/agendar-cita" state={{ userData }} />;
+      return <Navigate to="/agendar-cita" state={{userData }} />;
     }
   }
 
@@ -96,3 +101,4 @@ function LoginRegister() {
 }
 
 export default LoginRegister;
+
