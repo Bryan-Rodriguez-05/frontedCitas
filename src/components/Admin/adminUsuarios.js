@@ -3,42 +3,63 @@ import React, { useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
 
 function AdminUsuarios() {
-  const [usuarios, setUsuarios] = useState([]);
+  const [medicos, setMedicos] = useState([]);  // Cambié el nombre de 'usuarios' a 'medicos'
+  const [especialidades, setEspecialidades] = useState([]);
   const [formData, setFormData] = useState({
     correo: '',
     contrasenia: '',
-    rol: 'PACIENTE',
+    nombre: '',
+    apellido: '',
+    telefono: '',
+    especialidad_id: '',  // Especialidad del médico
   });
 
-  const fetchUsuarios = useCallback(async () => {
+  // Obtener especialidades disponibles
+  const fetchEspecialidades = useCallback(async () => {
     try {
-      const { data } = await axios.get('http://localhost:5000/api/administradores/usuarios');
-      setUsuarios(data);
+      const response = await axios.get('http://localhost:5000/api/especialidades');
+      setEspecialidades(response.data);
     } catch (error) {
-      console.error('Error al obtener usuarios', error);
+      console.error('Error al obtener especialidades', error);
     }
   }, []);
 
+  // Obtener médicos existentes desde la tabla 'medicos'
+  const fetchMedicos = useCallback(async () => {
+  try {
+    const { data } = await axios.get('http://localhost:5000/api/medicos', {
+      headers: {
+        'Cache-Control': 'no-cache', // Desactiva el cache
+      },
+    });
+    setMedicos(data);
+  } catch (error) {
+    console.error('Error al obtener médicos', error);
+  }
+}, []);
+
+
   useEffect(() => {
-    fetchUsuarios();
-  }, [fetchUsuarios]);
+    fetchMedicos();
+    fetchEspecialidades();
+  }, [fetchMedicos, fetchEspecialidades]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      await axios.post('http://localhost:5000/api/administradores/usuarios', formData);
-      alert('Usuario creado exitosamente');
-      setFormData({ correo: '', contrasenia: '', rol: 'PACIENTE' });
-      fetchUsuarios();  // recargamos la lista
+      await axios.post('http://localhost:5000/api/medicos/registro', formData);
+      alert('Médico creado exitosamente');
+      setFormData({ correo: '', contrasenia: '', nombre: '', apellido: '', telefono: '', especialidad_id: '' });
+      fetchMedicos();  // Recargamos la lista
     } catch (error) {
-      console.error('Error al crear usuario', error);
-      alert('No se pudo crear el usuario');
+      console.error('Error al crear médico', error);
+      alert('No se pudo crear el médico');
     }
   };
 
   return (
     <div className="container mt-5">
-      <h3>Gestión de Usuarios</h3>
+      <h3>Gestión de Médicos</h3>
       <form onSubmit={handleSubmit}>
         <div className="mb-3">
           <input
@@ -61,33 +82,67 @@ function AdminUsuarios() {
           />
         </div>
         <div className="mb-3">
+          <input
+            type="text"
+            className="form-control"
+            placeholder="Nombre"
+            value={formData.nombre}
+            onChange={(e) => setFormData({ ...formData, nombre: e.target.value })}
+            required
+          />
+        </div>
+        <div className="mb-3">
+          <input
+            type="text"
+            className="form-control"
+            placeholder="Apellido"
+            value={formData.apellido}
+            onChange={(e) => setFormData({ ...formData, apellido: e.target.value })}
+            required
+          />
+        </div>
+        <div className="mb-3">
+          <input
+            type="text"
+            className="form-control"
+            placeholder="Teléfono"
+            value={formData.telefono}
+            onChange={(e) => setFormData({ ...formData, telefono: e.target.value })}
+          />
+        </div>
+        <div className="mb-3">
           <select
             className="form-control"
-            value={formData.rol}
-            onChange={(e) => setFormData({ ...formData, rol: e.target.value })}
+            value={formData.especialidad_id}
+            onChange={(e) => setFormData({ ...formData, especialidad_id: e.target.value })}
             required
           >
-            <option value="PACIENTE">Paciente</option>
-            <option value="MEDICO">Médico</option>
-            <option value="ADMIN">Administrador</option>
+            <option value="">Seleccionar especialidad</option>
+            {especialidades.map((especialidad) => (
+              <option key={especialidad.id} value={especialidad.id}>
+                {especialidad.nombre}
+              </option>
+            ))}
           </select>
         </div>
-        <button type="submit" className="btn btn-primary">Crear Usuario</button>
+        <button type="submit" className="btn btn-primary">Crear Médico</button>
       </form>
 
-      <h4 className="mt-5">Usuarios Existentes</h4>
+      <h4 className="mt-5">Médicos Existentes</h4>
       <table className="table table-bordered">
         <thead>
           <tr>
             <th>Correo</th>
-            <th>Rol</th>
+            <th>Nombre</th>
+            <th>Especialidad</th>
           </tr>
         </thead>
         <tbody>
-          {usuarios.map((u) => (
-            <tr key={u.id}>
-              <td>{u.correo}</td>
-              <td>{u.rol}</td>
+          {medicos.map((medico) => (
+            <tr key={medico.usuario_id}>
+              <td>{medico.correo}</td>
+              <td>{medico.nombre} {medico.apellido}</td>
+              <td>{medico.especialidad}</td>
             </tr>
           ))}
         </tbody>
